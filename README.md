@@ -70,3 +70,19 @@ supabase functions deploy generate-meal-plan
 supabase functions deploy generate-shopping-list
 supabase functions deploy invite-member
 ```
+
+### Reset the database
+
+The SQL script at `supabase/sql/reset-schema.sql` drops any existing tables and
+recreates them with all constraints, triggers, and RLS policies. Run it whenever
+you need a fresh local database.
+
+Using the Supabase CLI:
+```bash
+supabase db execute supabase/sql/reset-schema.sql
+```
+
+Or with `psql`:
+```bash
+psql "$SUPABASE_DB_URL" -f supabase/sql/reset-schema.sql
+```
