@@ -9,7 +9,7 @@ export const useAppContext = () => useContext(AppContext);
 // This provider component will wrap my entire app.
 export const AppProvider = ({ children }) => {
   // I removed mealPlan from here to rely on the database.
-  const [shoppingList, setShoppingList] = useState([]);
+  const [shoppingList, setShoppingList] = useState({});
 
   // These are the values that will be available to all components.
   const value = {
