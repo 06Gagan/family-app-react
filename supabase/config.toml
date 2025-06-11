@@ -1,17 +1,13 @@
+# My functions are defined here.
+# I've removed the 'sign-up-with-profile' function as it's no longer needed.
 [functions.generate-meal-plan]
 entrypoint = "./functions/generate-meal-plan/index.ts"
 verify_jwt = true
 
 [functions.invite-member]
-entrypoint = "./functions.invite-member/index.ts"
+entrypoint = "./functions/invite-member/index.ts"
 verify_jwt = true
 
 [functions.generate-shopping-list]
 entrypoint = "./functions/generate-shopping-list/index.ts"
 verify_jwt = true
-
-# I've added the new signup function here.
-# verify_jwt is set to false because the user is not logged in yet when they sign up.
-[functions.sign-up-and-create-profile]
-entrypoint = "./functions/sign-up-and-create-profile/index.ts"
-verify_jwt = false

@@ -21,25 +21,27 @@ serve(async (req) => {
 
     if (!family_id) throw new Error("The inviting user's family ID is missing.");
     
-    // Step 1: Create the user's login.
+    // Step 1: Create the user's login. The trigger will automatically create their basic profile.
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
-      email_confirm: true, // They will get a confirmation email.
+      email_confirm: true,
       user_metadata: { full_name: fullName, role: role },
     });
 
     if (authError) throw authError;
 
-    // Step 2: Immediately create their profile, linking them to the correct family.
+    // Step 2: Now, I'll just update the profile created by the trigger to add the family_id.
+    // This avoids the "duplicate key" error.
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({ id: authData.user.id, full_name: fullName, role: role, family_id: family_id });
+      .update({ family_id: family_id })
+      .eq('id', authData.user.id);
     
     if (profileError) {
-      // If profile creation fails, I'll delete the user to prevent orphan accounts.
+      // If the update fails, I'll delete the user to prevent orphan accounts.
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      throw new Error(`Failed to create profile for invited user: ${profileError.message}`);
+      throw new Error(`Failed to update profile for invited user: ${profileError.message}`);
     }
     
     return new Response(JSON.stringify({ message: 'User invited successfully!' }), {
@@ -49,7 +51,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in invite-member function:", error.message);
-    // I've corrected the error response to use 'error.message'.
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

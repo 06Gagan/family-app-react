@@ -3,18 +3,20 @@ import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
+// I've defined the CORS headers that the browser needs.
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
+  // The browser first sends an OPTIONS request to check if the actual request is safe to send.
+  // I need to respond to this preflight request with the correct headers.
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // I'm now correctly expecting both preferences and an optional mood.
     const { preferences, mood } = await req.json()
 
     if (!GEMINI_API_KEY) {
@@ -28,7 +30,6 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' })
 
-    // My prompt is now more detailed, using all the info from the user.
     const prompt = `
       You are an expert family meal planning assistant for an app called FamilySync.
       A user has provided their family's food preferences: "${preferences}".
@@ -41,16 +42,17 @@ serve(async (req) => {
 
     const result = await model.generateContent(prompt)
     const response = await result.response
-    // I've made the JSON parsing more robust.
     const jsonResponseText = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
     const mealPlan = JSON.parse(jsonResponseText)
 
+    // My main response now also includes the CORS headers. This is the crucial fix.
     return new Response(JSON.stringify({ mealPlan }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error) {
     console.error("Error in generate-meal-plan function:", error.message);
+    // And I'll include them in the error response too, just in case.
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

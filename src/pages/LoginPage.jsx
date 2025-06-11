@@ -14,7 +14,6 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    // Step 1: Sign in the user.
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
@@ -23,17 +22,9 @@ export default function LoginPage() {
       return;
     }
     
-    // Step 2: Call the database function to handle the first-login setup.
-    // This is now much cleaner and safer than doing it on the client.
-    const { error: rpcError } = await supabase.rpc('handle_first_login');
+    // After login, call the function to set up the family if needed.
+    await supabase.rpc('setup_family_for_new_parent');
     
-    if (rpcError) {
-        setError(`Login succeeded, but failed to set up your profile: ${rpcError.message}`);
-        setLoading(false);
-        return;
-    }
-
-    // After ensuring the backend handles the profile and family setup, safely dispatch the user.
     setLoading(false);
     navigate('/dispatch');
   };
