@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../context/AppContext.js';
 
 export default function ShoppingListPage() {
   const { shoppingList, setShoppingList } = useAppContext();

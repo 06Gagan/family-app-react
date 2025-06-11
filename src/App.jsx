@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import AppProvider from './context/AppContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Layouts
