@@ -47,6 +47,7 @@ export default function RoleDispatcher() {
           navigate('/login');
           break;
       }
+      setLoading(false);
     };
 
     fetchUserRoleAndRedirect();
