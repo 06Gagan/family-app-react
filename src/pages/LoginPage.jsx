@@ -37,11 +37,10 @@ export default function LoginPage() {
         // This check is crucial for self-registering parents/admins.
         if (role === 'parent' || role === 'admin') {
           // Step A: Create a family for the new parent.
-          const { data: newFamily, error: familyError } = await supabase
+          const newFamilyId = crypto.randomUUID();
+          const { error: familyError } = await supabase
             .from('families')
-            .insert({ family_name: `${full_name}'s Family` })
-            .select('id')
-            .single();
+            .insert({ id: newFamilyId, family_name: `${full_name}'s Family` });
           
           if (familyError) {
             setError(`Failed to create a family: ${familyError.message}`);
@@ -52,7 +51,7 @@ export default function LoginPage() {
           // Step B: Create their profile and link it to the new family.
           const { error: profileError } = await supabase
             .from('profiles')
-            .insert({ id: signInData.user.id, full_name, role, family_id: newFamily.id });
+            .insert({ id: signInData.user.id, full_name, role, family_id: newFamilyId });
           
           if (profileError) {
              setError(`Login succeeded, but failed to create your profile: ${profileError.message}`);
