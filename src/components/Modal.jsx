@@ -1,19 +1,19 @@
 import React from 'react';
 
-// I'm updating the modal with better styling and a subtle animation.
+// Modal with improved styling and subtle animation
 export default function Modal({ isOpen, onClose, title, children }) {
   if (!isOpen) {
     return null;
   }
 
   return (
-    // I'm adding a fade-in animation to the background.
+    // Adds a fade-in animation to the background
     <div 
       className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 transition-opacity duration-300"
       style={{ opacity: isOpen ? 1 : 0 }}
       onClick={onClose}
     >
-      {/* I'm adding a scale-up animation to the modal panel itself. */}
+      {/* Modal panel uses a scale-up animation */}
       <div 
         className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md transform transition-transform duration-300"
         style={{ transform: isOpen ? 'scale(1)' : 'scale(0.95)' }}

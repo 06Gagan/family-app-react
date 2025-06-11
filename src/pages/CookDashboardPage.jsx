@@ -15,12 +15,12 @@ export default function CookDashboardPage() {
         return;
     }
 
-    // This query now explicitly asks for meal plans where 'assigned_to_cook_id' is the current user's ID.
-    // This is the crucial fix.
+    // Query explicitly asks for meal plans where 'assigned_to_cook_id' matches the current user
+    // Crucial fix to ensure correct filtering
     const { data, error: fetchError } = await supabase
       .from('meal_plans')
       .select('*')
-      .eq('assigned_to_cook_id', user.id) // I am now filtering for plans assigned to this cook.
+      .eq('assigned_to_cook_id', user.id) // Filters for plans assigned to this cook
       .order('created_at', { ascending: false });
     
     if (fetchError) {

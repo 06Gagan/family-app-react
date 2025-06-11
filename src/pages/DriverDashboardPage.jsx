@@ -15,11 +15,11 @@ export default function DriverDashboardPage() {
         return;
     }
 
-    // I've also proactively fixed the same bug here for the driver.
+    // Proactively fixed the same bug here for the driver
     const { data, error: fetchError } = await supabase
       .from('child_activities')
       .select(`*, child:profiles(full_name)`)
-      .eq('assigned_to_driver_id', user.id) // I am now filtering for activities assigned to this driver.
+      .eq('assigned_to_driver_id', user.id) // Filters for activities assigned to this driver
       .order('date', { ascending: true })
       .order('time', { ascending: true });
     

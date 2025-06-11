@@ -31,7 +31,7 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
         </Route>
 
-        {/* This is my new, secure route for dispatching users after login. */}
+        {/* Secure route for dispatching users after login */}
         <Route path="/dispatch" element={<ProtectedRoute><RoleDispatcher /></ProtectedRoute>} />
 
         {/* Parent/Admin Routes */}
