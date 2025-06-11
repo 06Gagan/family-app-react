@@ -11,7 +11,7 @@ export default function MainLayout() {
   };
 
   return (
-    // I'm using a darker, more vibrant gradient that provides better contrast.
+    // Uses a darker, more vibrant gradient that provides better contrast
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500"
          style={{ animation: 'liquid-gradient 20s ease infinite', backgroundSize: '400% 400%' }}>
       <header className="bg-white/70 backdrop-blur-lg sticky top-0 z-40 shadow-sm">

@@ -23,7 +23,7 @@ export default function LoginPage() {
     }
     
     if (signInData.user) {
-      // After a successful login, I'll check if a profile exists.
+      // After a successful login, check if a profile exists
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
@@ -63,7 +63,7 @@ export default function LoginPage() {
       }
     }
 
-    // Now that I've guaranteed a profile exists, I can safely dispatch the user.
+    // After ensuring a profile exists, safely dispatch the user
     navigate('/dispatch');
   };
 

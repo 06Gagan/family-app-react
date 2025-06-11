@@ -9,7 +9,7 @@ export default function ChoreManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // I have restored the full data fetching logic that was accidentally removed.
+  // Restored the full data fetching logic that was accidentally removed
   const fetchData = useCallback(async () => {
     setLoading(true);
     const { data: childrenData, error: childrenError } = await supabase
@@ -27,7 +27,7 @@ export default function ChoreManagementPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // I have also restored the logic for handling form input changes.
+  // Restored logic for handling form input changes
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
