@@ -4,10 +4,11 @@ This repository contains the React front end and Supabase Edge Functions for Fam
 
 ## Setup
 
-1. Install dependencies:
+1. Install dependencies **before running any npm script**:
    ```bash
    npm install
    ```
+   You can also run `./setup.sh` to install dependencies automatically.
 2. Copy the example environment file and provide your own values:
    ```bash
    cp .env.example .env
@@ -34,6 +35,8 @@ When running or deploying functions from the `supabase/functions` directory the 
 - `GEMINI_API_KEY` – Gemini API key used by server functions
 
 ## Commands
+
+Before running `npm run lint`, `npm run build`, or any other npm script, make sure dependencies have been installed with `npm install` (or by running `./setup.sh`).
 
 ### React app
 
