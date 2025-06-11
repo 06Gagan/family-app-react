@@ -18,31 +18,30 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, role: role },
-        // After confirmation, the user is sent to the login page to complete setup.
-        emailRedirectTo: `${window.location.origin}/login`,
-      },
-    });
+    try {
+      // I've changed this to call our new, reliable Edge Function.
+      const { data, error: invokeError } = await supabase.functions.invoke('sign-up-and-create-profile', {
+        body: { email, password, fullName, role },
+      });
 
-    if (authError) {
-      setError(authError.message);
-    } else {
+      if (invokeError) throw invokeError;
+      if (data.error) throw new Error(data.error);
+
       setIsModalOpen(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="w-full max-w-md bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl p-8">
       <h2 className="text-3xl font-bold text-white text-center mb-6">Create Your Family</h2>
       <form onSubmit={handleSignup} className="space-y-4">
-        <input type="text" placeholder="Your Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full px-4 py-3 bg-white/30 text-white placeholder-purple-200 border-2 border-transparent rounded-lg focus:border-white focus:outline-none"/>
-        <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 bg-white/30 text-white placeholder-purple-200 border-2 border-transparent rounded-lg focus:border-white focus:outline-none"/>
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-4 py-3 bg-white/30 text-white placeholder-purple-200 border-2 border-transparent rounded-lg focus:border-white focus:outline-none"/>
+        <input type="text" placeholder="Your Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full px-4 py-3 bg-white/30 text-white placeholder-purple-200 border-2 border-transparent rounded-lg focus:border-white focus:outline-none" />
+        <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 bg-white/30 text-white placeholder-purple-200 border-2 border-transparent rounded-lg focus:border-white focus:outline-none" />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-4 py-3 bg-white/30 text-white placeholder-purple-200 border-2 border-transparent rounded-lg focus:border-white focus:outline-none" />
         <select value={role} onChange={(e) => setRole(e.target.value)} required className="w-full px-4 py-3 bg-white/30 text-white border-2 border-transparent rounded-lg focus:border-white focus:outline-none appearance-none">
           <option value="parent" className="text-black">I'm a Parent</option>
           <option value="admin" className="text-black">I'm an Admin</option>

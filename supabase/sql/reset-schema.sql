@@ -11,6 +11,7 @@ DROP POLICY IF EXISTS "insert family" ON public.families;
 DROP POLICY IF EXISTS "select own family" ON public.families;
 
 -- Remove triggers and functions
+DROP FUNCTION IF EXISTS public.handle_first_login();
 DROP TRIGGER IF EXISTS create_profile_on_signup ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
 DROP FUNCTION IF EXISTS public.current_user_family_id();
@@ -108,6 +109,37 @@ BEGIN
 END;
 $$;
 
+-- Securely creates a family for a new parent/admin on their first login.
+-- This moves the critical logic from the client (LoginPage.jsx) to the database.
+CREATE OR REPLACE FUNCTION public.handle_first_login()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY definer
+SET search_path = public
+AS $$
+DECLARE
+  user_profile public.profiles;
+  new_family_id uuid;
+BEGIN
+  -- Find the profile of the user who just logged in.
+  SELECT * INTO user_profile FROM public.profiles WHERE id = auth.uid();
+
+  -- This function should only run for parents/admins on their very first login (when family_id is null).
+  IF user_profile.family_id IS NULL AND (user_profile.role = 'parent' OR user_profile.role = 'admin') THEN
+    -- Step 1: Create a new family for them.
+    INSERT INTO public.families (family_name)
+    VALUES (user_profile.full_name || '''s Family')
+    RETURNING id INTO new_family_id;
+
+    -- Step 2: Atomically update their profile to link them to the new family.
+    UPDATE public.profiles
+    SET family_id = new_family_id
+    WHERE id = auth.uid();
+  END IF;
+END;
+$$;
+
+
 CREATE TRIGGER create_profile_on_signup
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -172,5 +204,3 @@ ON public.child_activities
 FOR ALL
 USING  (family_id = public.current_user_family_id())
 WITH CHECK (family_id = public.current_user_family_id());
-
-

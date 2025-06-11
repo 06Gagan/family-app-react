@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -15,7 +14,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    // Step 1: Sign in the user.
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError(authError.message);
@@ -23,48 +23,18 @@ export default function LoginPage() {
       return;
     }
     
-    if (signInData.user) {
-      // After a successful login, check if a profile exists and whether it has a family
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, family_id')
-        .eq('id', signInData.user.id)
-        .single();
-
-      // If no profile exists or it has no family, this must be their first login after email confirmation.
-      if (!profile || !profile.family_id) {
-        const { full_name, role } = signInData.user.user_metadata;
-
-        // This check is crucial for self-registering parents/admins.
-        if (role === 'parent' || role === 'admin') {
-          // Step A: Create a family for the new parent.
-          const newFamilyId = uuidv4();
-          const { error: familyError } = await supabase
-            .from('families')
-            .insert({ id: newFamilyId, family_name: `${full_name}'s Family` });
-          
-          if (familyError) {
-            setError(`Failed to create a family: ${familyError.message}`);
-            setLoading(false);
-            return;
-          }
-
-          // Step B: Create their profile and link it to the new family.
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ full_name, role, family_id: newFamilyId })
-            .eq('id', signInData.user.id);
-          
-          if (profileError) {
-             setError(`Login succeeded, but failed to create your profile: ${profileError.message}`);
-             setLoading(false);
-             return;
-          }
-        }
-      }
+    // Step 2: Call the database function to handle the first-login setup.
+    // This is now much cleaner and safer than doing it on the client.
+    const { error: rpcError } = await supabase.rpc('handle_first_login');
+    
+    if (rpcError) {
+        setError(`Login succeeded, but failed to set up your profile: ${rpcError.message}`);
+        setLoading(false);
+        return;
     }
 
-    // After ensuring a profile exists, safely dispatch the user
+    // After ensuring the backend handles the profile and family setup, safely dispatch the user.
+    setLoading(false);
     navigate('/dispatch');
   };
 
