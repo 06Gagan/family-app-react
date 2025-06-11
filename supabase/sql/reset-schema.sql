@@ -99,9 +99,11 @@ SET search_path = public
 AS $$
 BEGIN
   INSERT INTO public.profiles(id, full_name, role)
-  VALUES (NEW.id,
-          NEW.raw_user_meta_data->>'full_name',
-          NEW.raw_user_meta_data->>'role');
+  VALUES (
+      NEW.id,
+      coalesce(NEW.raw_user_meta_data->>'full_name', NEW.user_metadata->>'full_name'),
+      coalesce(NEW.raw_user_meta_data->>'role', NEW.user_metadata->>'role')
+  );
   RETURN NEW;
 END;
 $$;
