@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -37,7 +38,7 @@ export default function LoginPage() {
         // This check is crucial for self-registering parents/admins.
         if (role === 'parent' || role === 'admin') {
           // Step A: Create a family for the new parent.
-          const newFamilyId = crypto.randomUUID();
+          const newFamilyId = uuidv4();
           const { error: familyError } = await supabase
             .from('families')
             .insert({ id: newFamilyId, family_name: `${full_name}'s Family` });
