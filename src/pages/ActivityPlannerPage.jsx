@@ -21,9 +21,23 @@ export default function ActivityPlannerPage() {
     if (driversError) setError(prev => prev + ' Failed to fetch drivers.');
     else setDrivers(driversData || []);
 
-    const { data: actsData, error: actsError } = await supabase.from('child_activities').select(`*, child:profiles(full_name)`).order('date', { ascending: true }).order('time', { ascending: true });
-    if (actsError) setError('Failed to fetch activities.');
-    else setActivities(actsData || []);
+    // I've made the query unambiguous by specifying which column to join on.
+    // This will now correctly fetch the child's name and the driver's name.
+    const { data: actsData, error: actsError } = await supabase
+      .from('child_activities')
+      .select(`
+        *,
+        child:profiles!child_id(full_name),
+        driver:profiles!assigned_to_driver_id(full_name)
+      `)
+      .order('date', { ascending: true })
+      .order('time', { ascending: true });
+
+    if (actsError) {
+      setError('Failed to fetch activities: ' + actsError.message);
+    } else {
+      setActivities(actsData || []);
+    }
     setLoading(false);
   }, []);
 
@@ -42,7 +56,13 @@ export default function ActivityPlannerPage() {
     const { data: profileData, error: profileError } = await supabase.from('profiles').select('family_id').eq('id', user.id).single();
     if (profileError) { setError("Could not find user's family information."); return; }
     
-    const { error: insertError } = await supabase.from('child_activities').insert([{ ...formData, family_id: profileData.family_id }]);
+    const dataToInsert = {
+      ...formData,
+      family_id: profileData.family_id,
+      assigned_to_driver_id: formData.assigned_to_driver_id || null,
+    };
+
+    const { error: insertError } = await supabase.from('child_activities').insert([dataToInsert]);
     if (insertError) setError('Failed to add activity: ' + insertError.message);
     else {
       setFormData({ title: '', child_id: '', date: '', time: '', location: '', assigned_to_driver_id: '' });
@@ -84,7 +104,9 @@ export default function ActivityPlannerPage() {
               {activities.length > 0 ? activities.map(activity => (
                 <li key={activity.id} className="p-5 border border-white/20 rounded-lg bg-white/30">
                   <h3 className="font-bold text-lg text-white">{activity.title}</h3>
-                  <p className="text-cyan-200 font-semibold">{activity.child?.full_name || 'N/A'}</p>
+                  <p className="text-cyan-200 font-semibold">For: {activity.child?.full_name || 'N/A'}</p>
+                  {/* I've added a line to display the driver's name if available */}
+                  {activity.driver && <p className="text-cyan-200 font-semibold">Driver: {activity.driver.full_name}</p>}
                   <p className="text-purple-200 text-sm mt-1">{new Date(activity.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {activity.time}</p>
                   {activity.location && <p className="text-sm text-purple-200 mt-1"><strong>Location:</strong> {activity.location}</p>}
                 </li>
