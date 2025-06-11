@@ -23,17 +23,17 @@ export default function LoginPage() {
     }
     
     if (signInData.user) {
-      // After a successful login, check if a profile exists
+      // After a successful login, check if a profile exists and whether it has a family
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, family_id')
         .eq('id', signInData.user.id)
         .single();
 
-      // If no profile exists, this must be their first login after email confirmation.
-      if (!profile) {
+      // If no profile exists or it has no family, this must be their first login after email confirmation.
+      if (!profile || !profile.family_id) {
         const { full_name, role } = signInData.user.user_metadata;
-        
+
         // This check is crucial for self-registering parents/admins.
         if (role === 'parent' || role === 'admin') {
           // Step A: Create a family for the new parent.
@@ -51,7 +51,8 @@ export default function LoginPage() {
           // Step B: Create their profile and link it to the new family.
           const { error: profileError } = await supabase
             .from('profiles')
-            .insert({ id: signInData.user.id, full_name, role, family_id: newFamilyId });
+            .update({ full_name, role, family_id: newFamilyId })
+            .eq('id', signInData.user.id);
           
           if (profileError) {
              setError(`Login succeeded, but failed to create your profile: ${profileError.message}`);
