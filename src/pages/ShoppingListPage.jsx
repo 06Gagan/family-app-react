@@ -1,47 +1,78 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useAppContext } from '../context/AppContext.js';
 
 export default function ShoppingListPage() {
-  const { shoppingList, setShoppingList } = useAppContext();
+  const [shoppingList, setShoppingList] = useState({});
   const [mealPlan, setMealPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [budgetMode, setBudgetMode] = useState(false);
 
-  const fetchLatestMealPlan = useCallback(async () => {
+  // My new function to fetch the latest shopping list from the database.
+  const fetchLatestShoppingList = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('meal_plans').select('meals_json').order('created_at', { ascending: false }).limit(1).single();
-    if (error) console.log("No meal plan found.");
-    else if (data) setMealPlan(data.meals_json);
+    const { data, error } = await supabase
+      .from('shopping_lists')
+      .select('items_json')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+      
+    if (data) {
+      setShoppingList(data.items_json || {});
+    }
     setLoading(false);
   }, []);
 
+  const fetchLatestMealPlan = useCallback(async () => {
+    const { data, error } = await supabase.from('meal_plans').select('meals_json').order('created_at', { ascending: false }).limit(1).single();
+    if (error) console.log("No meal plan found.");
+    else if (data) setMealPlan(data.meals_json);
+  }, []);
+
   useEffect(() => {
+    // I'll fetch both the latest meal plan and the latest shopping list when the page loads.
     fetchLatestMealPlan();
-    setShoppingList({});
-  }, [fetchLatestMealPlan, setShoppingList]);
+    fetchLatestShoppingList();
+  }, [fetchLatestMealPlan, fetchLatestShoppingList]);
 
   const handleGenerateList = async () => {
-    if (!mealPlan) { 
-      setError("Please generate a meal plan first."); 
-      return; 
+    if (!mealPlan) {
+      setError("Please generate a meal plan first.");
+      return;
     }
+    setShoppingList({});
     setGenerating(true);
     setError('');
-    
+
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('generate-shopping-list', {
+      const { data: generatedData, error: invokeError } = await supabase.functions.invoke('generate-shopping-list', {
         body: { mealPlan, budgetMode }
       });
 
       if (invokeError) throw invokeError;
-      if (data.error) throw new Error(data.error);
-      if (!data.shoppingList) throw new Error("The AI did not return a valid shopping list.");
+      if (generatedData.error) throw new Error(generatedData.error);
+      if (!generatedData.shoppingList) throw new Error("The AI did not return a valid shopping list.");
 
-      setShoppingList(data.shoppingList);
+      setShoppingList(generatedData.shoppingList);
+
+      // After generating the list, I'll save it to the database.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("You must be logged in to save a list.");
+
+      const { data: profile } = await supabase.from('profiles').select('family_id').eq('id', user.id).single();
+      if (!profile) throw new Error("Could not find your profile to save the list.");
+
+      const { error: insertError } = await supabase.from('shopping_lists').insert({
+        user_id: user.id,
+        family_id: profile.family_id,
+        items_json: generatedData.shoppingList,
+      });
+
+      if (insertError) throw new Error(`Failed to save shopping list: ${insertError.message}`);
+
     } catch (err) {
       setError(err.message || "Failed to generate shopping list.");
     } finally {
@@ -49,7 +80,7 @@ export default function ShoppingListPage() {
     }
   };
 
-  if (loading) return <p className="text-center text-lg text-white">Loading your latest meal plan...</p>;
+  if (loading) return <p className="text-center text-lg text-white">Loading your data...</p>;
 
   return (
     <>
@@ -58,7 +89,7 @@ export default function ShoppingListPage() {
         <h1 className="text-4xl font-bold text-white">Shopping List</h1>
         <p className="text-purple-200 mt-1">Generate a list from your latest meal plan.</p>
       </header>
-      
+
       {!mealPlan ? (
         <div className="text-center p-12 bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30">
             <div className="text-6xl mb-4">🍽️</div>
